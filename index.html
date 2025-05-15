@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>RTS Idade da Pedra</title>
+  <style>
+    body {
+      background: #2c2c2c;
+      color: #fff;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    #gameArea {
+      position: relative;
+      width: 800px;
+      height: 400px;
+      background: #4a752c;
+      border: 2px solid #333;
+      margin-top: 20px;
+      overflow: hidden;
+    }
+
+    .unit, .mine, .center {
+      position: absolute;
+      font-size: 32px;
+    }
+
+    .floatText {
+      position: absolute;
+      color: gold;
+      font-weight: bold;
+      animation: floatUp 1s ease-out forwards;
+      z-index: 10;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-30px); }
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>💰 Ouro: <span id="gold">2</span></h2>
+<button onclick="createVillager()">Criar Aldeão (50 ouro)</button>
+
+<div id="gameArea">
+  <div class="mine" id="mine" style="left: 80px; top: 150px;">🪨</div>
+  <div class="center" id="center" style="left: 700px; top: 150px;">🏠</div>
+</div>
+
+<script>
+  let gold = 2;
+  let villagerCount = 0;
+
+  function updateGold() {
+    document.getElementById("gold").textContent = gold;
+  }
+
+  function createVillager() {
+    if (gold < 50 && villagerCount > 0) {
+      alert("Ouro insuficiente!");
+      return;
+    }
+
+    if (villagerCount > 0) {
+      gold -= 50;
+      updateGold();
+    }
+
+    const gameArea = document.getElementById("gameArea");
+    const villager = document.createElement("div");
+    villager.className = "unit";
+    villager.textContent = "🧍";
+    villager.style.left = "700px"; // centro
+    villager.style.top = "180px";
+    const id = "villager-" + villagerCount++;
+    villager.id = id;
+    gameArea.appendChild(villager);
+
+    startCycle(villager);
+  }
+
+  function startCycle(villager) {
+    const mineX = 100;
+    const centerX = 700;
+    const y = 180;
+    const speed = 0.5; // pixels por frame (~60fps)
+
+    function moveTo(targetX, onComplete) {
+      function animate() {
+        let currentX = parseFloat(villager.style.left);
+        if (Math.abs(currentX - targetX) <= speed) {
+          villager.style.left = targetX + "px";
+          onComplete();
+          return;
+        }
+
+        let direction = currentX < targetX ? 1 : -1;
+        villager.style.left = (currentX + direction * speed) + "px";
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    }
+
+    function goToMine() {
+      moveTo(mineX, () => {
+        setTimeout(goToCenter, 500); // tempo de coleta
+      });
+    }
+
+    function goToCenter() {
+      moveTo(centerX, () => {
+        setTimeout(() => {
+          gold += 5;
+          updateGold();
+          showFloatText(villager, "+5 💰");
+          goToMine();
+        }, 500); // tempo de entrega
+      });
+    }
+
+    goToMine();
+  }
+
+  function showFloatText(villager, text) {
+    const float = document.createElement("div");
+    float.className = "floatText";
+    float.textContent = text;
+
+    const left = parseFloat(villager.style.left || 0) + 10;
+    const top = parseFloat(villager.style.top || 0) - 10;
+
+    float.style.left = left + "px";
+    float.style.top = top + "px";
+
+    const gameArea = document.getElementById("gameArea");
+    gameArea.appendChild(float);
+
+    setTimeout(() => float.remove(), 1000);
+  }
+
+  // cria o primeiro aldeão
+  window.onload = () => {
+    createVillager();
+  };
+</script>
+
+
+</body>
+</html>
