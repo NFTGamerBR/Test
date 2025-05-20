@@ -1,131 +1,163 @@
 <!DOCTYPE html>
-<html lang="en-us">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Unity WebGL Player | Agro Ville</title>
-    <link rel="shortcut icon" href="TemplateData/favicon.ico">
-    <link rel="stylesheet" href="TemplateData/style.css">
-  </head>
-  <body>
-    <div id="unity-container" class="unity-desktop">
-      <canvas id="unity-canvas" width=960 height=600 tabindex="-1"></canvas>
-      <div id="unity-loading-bar">
-        <div id="unity-logo"></div>
-        <div id="unity-progress-bar-empty">
-          <div id="unity-progress-bar-full"></div>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login Supabase com Bootstrap</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+  <div class="container py-5" style="max-width: 400px;">
+    <h1 class="mb-4 text-center">Supabase Login</h1>
+
+    <!-- Cadastro -->
+    <div id="signup-div">
+      <h3>Cadastro</h3>
+      <form id="signup-form" class="mb-4">
+        <div class="mb-3">
+          <input type="email" id="signup-email" class="form-control" placeholder="Email" required />
         </div>
-      </div>
-      <div id="unity-warning"> </div>
-      <div id="unity-footer">
-        <div id="unity-webgl-logo"></div>
-        <div id="unity-fullscreen-button"></div>
-        <div id="unity-build-title">Agro Ville</div>
-      </div>
+        <div class="mb-3">
+          <input type="password" id="signup-password" class="form-control" placeholder="Senha" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
+      </form>
     </div>
-    <script>
 
-      var container = document.querySelector("#unity-container");
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.querySelector("#unity-loading-bar");
-      var progressBarFull = document.querySelector("#unity-progress-bar-full");
-      var fullscreenButton = document.querySelector("#unity-fullscreen-button");
-      var warningBanner = document.querySelector("#unity-warning");
+    <!-- Login -->
+    <div id="login-div">
+      <h3>Login</h3>
+      <form id="login-form" class="mb-4">
+        <div class="mb-3">
+          <input type="email" id="login-email" class="form-control" placeholder="Email" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" id="login-password" class="form-control" placeholder="Senha" required />
+        </div>
+        <button type="submit" class="btn btn-success w-100">Entrar</button>
+      </form>
+    </div>
 
-      // Shows a temporary message banner/ribbon for a few seconds, or
-      // a permanent error message on top of the canvas if type=='error'.
-      // If type=='warning', a yellow highlight color is used.
-      // Modify or remove this function to customize the visually presented
-      // way that non-critical warnings and error messages are presented to the
-      // user.
-      function unityShowBanner(msg, type) {
-        function updateBannerVisibility() {
-          warningBanner.style.display = warningBanner.children.length ? 'block' : 'none';
-        }
-        var div = document.createElement('div');
-        div.innerHTML = msg;
-        warningBanner.appendChild(div);
-        if (type == 'error') div.style = 'background: red; padding: 10px;';
-        else {
-          if (type == 'warning') div.style = 'background: yellow; padding: 10px;';
-          setTimeout(function() {
-            warningBanner.removeChild(div);
-            updateBannerVisibility();
-          }, 5000);
-        }
-        updateBannerVisibility();
+    <!-- Perfil -->
+    <div id="profile-div" class="d-none card p-3">
+      <h3>Perfil</h3>
+      <p><strong>Coins:</strong> <span id="coins">0</span></p>
+      <p><strong>Tokens:</strong> <span id="tokens">0</span></p>
+      <button id="logout-btn" class="btn btn-danger w-100">Sair</button>
+    </div>
+  </div>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <!-- Bootstrap Bundle JS (opcional para componentes bootstrap) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = 'https://pclrnkgztxtvnxgcjoqk.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbHJua2d6dHh0dm54Z2Nqb3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NzQ0MDYsImV4cCI6MjA2MzM1MDQwNn0.C6V9GEaJwkkWboE0pJY-w1wB_IqYlCSni4NG2LTrolY';
+
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Elementos DOM
+    const signupDiv = document.getElementById('signup-div');
+    const loginDiv = document.getElementById('login-div');
+    const profileDiv = document.getElementById('profile-div');
+
+    const signupForm = document.getElementById('signup-form');
+    const loginForm = document.getElementById('login-form');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const coinsSpan = document.getElementById('coins');
+    const tokensSpan = document.getElementById('tokens');
+
+    async function loadProfile() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        showLoggedOut();
+        return;
       }
 
-      var buildUrl = "Build";
-      var loaderUrl = buildUrl + "/web.loader.js";
-      var config = {
-        dataUrl: buildUrl + "/web.data",
-        frameworkUrl: buildUrl + "/web.framework.js",
-        codeUrl: buildUrl + "/web.wasm",
-        streamingAssetsUrl: "StreamingAssets",
-        companyName: "DefaultCompany",
-        productName: "Agro Ville",
-        productVersion: "1.21",
-        showBanner: unityShowBanner,
-      };
+      const { data, error: err } = await supabase
+        .from('profiles')
+        .select('Coins, Tokens')
+        .eq('id', user.id)
+        .single();
 
-      // By default, Unity keeps WebGL canvas render target size matched with
-      // the DOM size of the canvas element (scaled by window.devicePixelRatio)
-      // Set this to false if you want to decouple this synchronization from
-      // happening inside the engine, and you would instead like to size up
-      // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
-
-      // If you would like all file writes inside Unity Application.persistentDataPath
-      // directory to automatically persist so that the contents are remembered when
-      // the user revisits the site the next time, uncomment the following line:
-      // config.autoSyncPersistentDataPath = true;
-      // This autosyncing is currently not the default behavior to avoid regressing
-      // existing user projects that might rely on the earlier manual
-      // JS_FileSystem_Sync() behavior, but in future Unity version, this will be
-      // expected to change.
-
-      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-        // Mobile device style: fill the whole browser client area with the game canvas:
-
-        var meta = document.createElement('meta');
-        meta.name = 'viewport';
-        meta.content = 'width=device-width, height=device-height, initial-scale=1.0, user-scalable=no, shrink-to-fit=yes';
-        document.getElementsByTagName('head')[0].appendChild(meta);
-        container.className = "unity-mobile";
-        canvas.className = "unity-mobile";
-
-        // To lower canvas resolution on mobile devices to gain some
-        // performance, uncomment the following line:
-        // config.devicePixelRatio = 1;
-
-
+      if (err) {
+        if (err.code === 'PGRST116') {
+          // Perfil não existe, cria
+          await supabase.from('profiles').insert({ id: user.id, Coins: 0, Tokens: 0 });
+          coinsSpan.textContent = 0;
+          tokensSpan.textContent = 0;
+        } else {
+          alert('Erro ao carregar perfil: ' + err.message);
+          return;
+        }
       } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-
-        canvas.style.width = "960px";
-        canvas.style.height = "600px";
+        coinsSpan.textContent = data.Coins;
+        tokensSpan.textContent = data.Tokens;
       }
 
-      loadingBar.style.display = "block";
+      showLoggedIn();
+    }
 
-      var script = document.createElement("script");
-      script.src = loaderUrl;
-      script.onload = () => {
-        createUnityInstance(canvas, config, (progress) => {
-          progressBarFull.style.width = 100 * progress + "%";
-              }).then((unityInstance) => {
-                loadingBar.style.display = "none";
-                fullscreenButton.onclick = () => {
-                  unityInstance.SetFullscreen(1);
-                };
-              }).catch((message) => {
-                alert(message);
-              });
-            };
+    function showLoggedIn() {
+      profileDiv.classList.remove('d-none');
+      signupDiv.style.display = 'none';
+      loginDiv.style.display = 'none';
+    }
 
-      document.body.appendChild(script);
+    function showLoggedOut() {
+      profileDiv.classList.add('d-none');
+      signupDiv.style.display = 'block';
+      loginDiv.style.display = 'block';
+    }
 
-    </script>
-  </body>
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        alert('Erro no cadastro: ' + error.message);
+      } else {
+        alert('Cadastro feito! Verifique seu email para confirmação.');
+        signupForm.reset();
+      }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert('Erro no login: ' + error.message);
+      } else {
+        loginForm.reset();
+        await loadProfile();
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showLoggedOut();
+    });
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        loadProfile();
+      } else {
+        showLoggedOut();
+      }
+    });
+
+    // Ao carregar a página
+    loadProfile();
+  </script>
+</body>
 </html>
