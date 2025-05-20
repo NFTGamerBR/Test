@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login e Cadastro Supabase</title>
-  <!-- Bootstrap 5 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <!-- Supabase JS -->
+  <title>Login & Cadastro Supabase v1.1</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
   <style>
-    .pointer { cursor: pointer; }
+    .pointer {
+      cursor: pointer;
+    }
     #version {
       font-size: 0.8rem;
       color: #666;
@@ -19,124 +22,156 @@
   </style>
 </head>
 <body class="bg-light d-flex flex-column min-vh-100 justify-content-center align-items-center">
-
-  <div class="card shadow p-4" style="width: 350px; max-width: 90vw;">
+  <div
+    class="card shadow p-4"
+    style="width: 350px; max-width: 90vw"
+  >
     <h2 class="text-center mb-4" id="formTitle">Login</h2>
 
     <form id="authForm" novalidate>
       <div class="mb-3">
         <label for="emailInput" class="form-label">Email</label>
-        <input type="email" id="emailInput" class="form-control" placeholder="email@exemplo.com" required />
+        <input
+          type="email"
+          id="emailInput"
+          class="form-control"
+          placeholder="email@exemplo.com"
+          required
+        />
       </div>
       <div class="mb-3">
         <label for="passwordInput" class="form-label">Senha</label>
-        <input type="password" id="passwordInput" class="form-control" placeholder="Senha" required minlength="6" />
+        <input
+          type="password"
+          id="passwordInput"
+          class="form-control"
+          placeholder="Senha"
+          required
+          minlength="6"
+        />
       </div>
 
       <div class="d-flex justify-content-between align-items-center">
-        <button type="submit" id="submitBtn" class="btn btn-primary">Entrar</button>
+        <button type="submit" id="submitBtn" class="btn btn-primary">
+          Entrar
+        </button>
         <span id="toggleForm" class="text-primary pointer">Criar conta</span>
       </div>
     </form>
 
     <div id="messageBox" class="mt-3 text-center"></div>
 
-    <div id="version"></div>
+    <div id="version">v1.1</div>
   </div>
 
   <!-- Modal de erro -->
-  <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+  <div
+    class="modal fade"
+    id="errorModal"
+    tabindex="-1"
+    aria-labelledby="errorModalLabel"
+    aria-hidden="true"
+  >
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content border-danger">
         <div class="modal-header bg-danger text-white">
           <h5 class="modal-title" id="errorModalLabel">Erro</h5>
-          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+          <button
+            type="button"
+            class="btn-close btn-close-white"
+            data-bs-dismiss="modal"
+            aria-label="Fechar"
+          ></button>
         </div>
         <div class="modal-body" id="errorModalBody"></div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Ok</button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            data-bs-dismiss="modal"
+          >
+            Ok
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Bootstrap JS (com Popper) -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+  ></script>
 
   <script>
-    // Configuração Supabase - coloque seus dados aqui!
-    const SUPABASE_URL = 'https://pclrnkgztxtvnxgcjoqk.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbHJua2d6dHh0dm54Z2Nqb3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NzQ0MDYsImV4cCI6MjA2MzM1MDQwNn0.C6V9GEaJwkkWboE0pJY-w1wB_IqYlCSni4NG2LTrolY';
+    // Configuração Supabase
+    const SUPABASE_URL =
+      "https://pclrnkgztxtvnxgcjoqk.supabase.co";
+    const SUPABASE_ANON_KEY =
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbHJua2d6dHh0dm54Z2Nqb3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NzQ0MDYsImV4cCI6MjA2MzM1MDQwNn0.C6V9GEaJwkkWboE0pJY-w1wB_IqYlCSni4NG2LTrolY";
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Elementos
-    const formTitle = document.getElementById('formTitle');
-    const authForm = document.getElementById('authForm');
-    const emailInput = document.getElementById('emailInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const submitBtn = document.getElementById('submitBtn');
-    const toggleForm = document.getElementById('toggleForm');
-    const messageBox = document.getElementById('messageBox');
-    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
-    const errorModalBody = document.getElementById('errorModalBody');
-    const versionBox = document.getElementById('version');
+    const formTitle = document.getElementById("formTitle");
+    const authForm = document.getElementById("authForm");
+    const emailInput = document.getElementById("emailInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const submitBtn = document.getElementById("submitBtn");
+    const toggleForm = document.getElementById("toggleForm");
+    const messageBox = document.getElementById("messageBox");
+    const errorModal = new bootstrap.Modal(
+      document.getElementById("errorModal")
+    );
+    const errorModalBody = document.getElementById("errorModalBody");
 
-    let isLogin = true; // flag de estado do form
+    let isLogin = true;
 
-    // Mostrar erro modal
     function showError(message) {
       errorModalBody.textContent = message;
       errorModal.show();
     }
 
-    // Mostrar mensagem texto normal
     function showMessage(message, success = true) {
       messageBox.textContent = message;
-      messageBox.style.color = success ? 'green' : 'red';
+      messageBox.style.color = success ? "green" : "red";
     }
 
-    // Limpar mensagens
     function clearMessages() {
-      messageBox.textContent = '';
+      messageBox.textContent = "";
     }
 
-    // Validação básica
     function validateInputs(email, password) {
       if (!email) {
-        showError('Por favor, insira seu email.');
+        showError("Por favor, insira seu email.");
         return false;
       }
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        showError('Por favor, insira um email válido.');
+        showError("Por favor, insira um email válido.");
         return false;
       }
       if (!password || password.length < 6) {
-        showError('Senha deve ter pelo menos 6 caracteres.');
+        showError("Senha deve ter pelo menos 6 caracteres.");
         return false;
       }
       return true;
     }
 
-    // Alternar entre login e cadastro
-    toggleForm.addEventListener('click', () => {
+    toggleForm.addEventListener("click", () => {
       isLogin = !isLogin;
       clearMessages();
       if (isLogin) {
-        formTitle.textContent = 'Login';
-        submitBtn.textContent = 'Entrar';
-        toggleForm.textContent = 'Criar conta';
+        formTitle.textContent = "Login";
+        submitBtn.textContent = "Entrar";
+        toggleForm.textContent = "Criar conta";
       } else {
-        formTitle.textContent = 'Cadastro';
-        submitBtn.textContent = 'Cadastrar';
-        toggleForm.textContent = 'Voltar ao login';
+        formTitle.textContent = "Cadastro";
+        submitBtn.textContent = "Cadastrar";
+        toggleForm.textContent = "Voltar ao login";
       }
       authForm.reset();
     });
 
-    // Evento do form
-    authForm.addEventListener('submit', async (e) => {
+    authForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       clearMessages();
 
@@ -146,42 +181,40 @@
       if (!validateInputs(email, password)) return;
 
       if (isLogin) {
-        showMessage('Fazendo login...');
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-          email,
-          password,
-        });
+        showMessage("Fazendo login...");
+        const
+{ data, error } = await supabase.auth.signInWithPassword({
+email,
+password,
+});
 
-        if (error) {
-          showError('Erro ao fazer login: ' + error.message);
-          showMessage('', false);
-        } else {
-          showMessage(`Login realizado com sucesso! Bem-vindo(a), ${data.user.email}`);
-        }
-      } else {
-        showMessage('Criando conta...');
-        const { data, error } = await supabaseClient.auth.signUp({
-          email,
-          password,
-        });
-
-        if (error) {
-          showError('Erro ao cadastrar: ' + error.message);
-          showMessage('', false);
-        } else {
-          showMessage('Cadastro realizado! Por favor, confirme seu email antes de logar.');
-          // Voltar para tela de login após 3 segundos
-          setTimeout(() => {
-            toggleForm.click();
-          }, 3000);
-        }
-      }
+go
+Copiar
+Editar
+    if (error) {
+      showError("Erro ao fazer login: " + error.message);
+      showMessage("", false);
+    } else {
+      showMessage(`Login realizado com sucesso! Bem-vindo(a), ${data.user.email}`);
+    }
+  } else {
+    showMessage("Criando conta...");
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
     });
 
-    // Exibir versão Supabase no rodapé
-    window.addEventListener('load', () => {
-      versionBox.textContent = `Supabase JS v${supabase.VERSION}`;
-    });
-  </script>
-</body>
-</html>
+    if (error) {
+      showError("Erro ao cadastrar: " + error.message);
+      showMessage("", false);
+    } else {
+      showMessage(
+        "Cadastro realizado! Por favor, confirme seu email antes de logar."
+      );
+      setTimeout(() => {
+        toggleForm.click();
+      }, 3000);
+    }
+  }
+});
+</script> </body> </html>
