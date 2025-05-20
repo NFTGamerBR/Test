@@ -3,161 +3,185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login Supabase com Bootstrap</title>
-  <!-- Bootstrap CSS -->
+  <title>Login e Cadastro Supabase</title>
+  <!-- Bootstrap 5 CSS -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <style>
+    .pointer { cursor: pointer; }
+    #version {
+      font-size: 0.8rem;
+      color: #666;
+      margin-top: 1rem;
+      text-align: center;
+    }
+  </style>
 </head>
-<body class="bg-light">
+<body class="bg-light d-flex flex-column min-vh-100 justify-content-center align-items-center">
 
-  <div class="container py-5" style="max-width: 400px;">
-    <h1 class="mb-4 text-center">Supabase Login</h1>
+  <div class="card shadow p-4" style="width: 350px; max-width: 90vw;">
+    <h2 class="text-center mb-4" id="formTitle">Login</h2>
 
-    <!-- Cadastro -->
-    <div id="signup-div">
-      <h3>Cadastro</h3>
-      <form id="signup-form" class="mb-4">
-        <div class="mb-3">
-          <input type="email" id="signup-email" class="form-control" placeholder="Email" required />
-        </div>
-        <div class="mb-3">
-          <input type="password" id="signup-password" class="form-control" placeholder="Senha" required />
-        </div>
-        <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
-      </form>
-    </div>
+    <form id="authForm" novalidate>
+      <div class="mb-3">
+        <label for="emailInput" class="form-label">Email</label>
+        <input type="email" id="emailInput" class="form-control" placeholder="email@exemplo.com" required />
+      </div>
+      <div class="mb-3">
+        <label for="passwordInput" class="form-label">Senha</label>
+        <input type="password" id="passwordInput" class="form-control" placeholder="Senha" required minlength="6" />
+      </div>
 
-    <!-- Login -->
-    <div id="login-div">
-      <h3>Login</h3>
-      <form id="login-form" class="mb-4">
-        <div class="mb-3">
-          <input type="email" id="login-email" class="form-control" placeholder="Email" required />
-        </div>
-        <div class="mb-3">
-          <input type="password" id="login-password" class="form-control" placeholder="Senha" required />
-        </div>
-        <button type="submit" class="btn btn-success w-100">Entrar</button>
-      </form>
-    </div>
+      <div class="d-flex justify-content-between align-items-center">
+        <button type="submit" id="submitBtn" class="btn btn-primary">Entrar</button>
+        <span id="toggleForm" class="text-primary pointer">Criar conta</span>
+      </div>
+    </form>
 
-    <!-- Perfil -->
-    <div id="profile-div" class="d-none card p-3">
-      <h3>Perfil</h3>
-      <p><strong>Coins:</strong> <span id="coins">0</span></p>
-      <p><strong>Tokens:</strong> <span id="tokens">0</span></p>
-      <button id="logout-btn" class="btn btn-danger w-100">Sair</button>
+    <div id="messageBox" class="mt-3 text-center"></div>
+
+    <div id="version"></div>
+  </div>
+
+  <!-- Modal de erro -->
+  <div class="modal fade" id="errorModal" tabindex="-1" aria-labelledby="errorModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-danger">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="errorModalLabel">Erro</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body" id="errorModalBody"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-danger" data-bs-dismiss="modal">Ok</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Supabase JS -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
-  <!-- Bootstrap Bundle JS (opcional para componentes bootstrap) -->
+  <!-- Bootstrap JS (com Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
+    // Configuração Supabase - coloque seus dados aqui!
     const SUPABASE_URL = 'https://pclrnkgztxtvnxgcjoqk.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbHJua2d6dHh0dm54Z2Nqb3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NzQ0MDYsImV4cCI6MjA2MzM1MDQwNn0.C6V9GEaJwkkWboE0pJY-w1wB_IqYlCSni4NG2LTrolY';
 
-    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // Elementos DOM
-    const signupDiv = document.getElementById('signup-div');
-    const loginDiv = document.getElementById('login-div');
-    const profileDiv = document.getElementById('profile-div');
+    // Elementos
+    const formTitle = document.getElementById('formTitle');
+    const authForm = document.getElementById('authForm');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const submitBtn = document.getElementById('submitBtn');
+    const toggleForm = document.getElementById('toggleForm');
+    const messageBox = document.getElementById('messageBox');
+    const errorModal = new bootstrap.Modal(document.getElementById('errorModal'));
+    const errorModalBody = document.getElementById('errorModalBody');
+    const versionBox = document.getElementById('version');
 
-    const signupForm = document.getElementById('signup-form');
-    const loginForm = document.getElementById('login-form');
-    const logoutBtn = document.getElementById('logout-btn');
+    let isLogin = true; // flag de estado do form
 
-    const coinsSpan = document.getElementById('coins');
-    const tokensSpan = document.getElementById('tokens');
+    // Mostrar erro modal
+    function showError(message) {
+      errorModalBody.textContent = message;
+      errorModal.show();
+    }
 
-    async function loadProfile() {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error || !user) {
-        showLoggedOut();
-        return;
+    // Mostrar mensagem texto normal
+    function showMessage(message, success = true) {
+      messageBox.textContent = message;
+      messageBox.style.color = success ? 'green' : 'red';
+    }
+
+    // Limpar mensagens
+    function clearMessages() {
+      messageBox.textContent = '';
+    }
+
+    // Validação básica
+    function validateInputs(email, password) {
+      if (!email) {
+        showError('Por favor, insira seu email.');
+        return false;
       }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showError('Por favor, insira um email válido.');
+        return false;
+      }
+      if (!password || password.length < 6) {
+        showError('Senha deve ter pelo menos 6 caracteres.');
+        return false;
+      }
+      return true;
+    }
 
-      const { data, error: err } = await supabase
-        .from('profiles')
-        .select('Coins, Tokens')
-        .eq('id', user.id)
-        .single();
+    // Alternar entre login e cadastro
+    toggleForm.addEventListener('click', () => {
+      isLogin = !isLogin;
+      clearMessages();
+      if (isLogin) {
+        formTitle.textContent = 'Login';
+        submitBtn.textContent = 'Entrar';
+        toggleForm.textContent = 'Criar conta';
+      } else {
+        formTitle.textContent = 'Cadastro';
+        submitBtn.textContent = 'Cadastrar';
+        toggleForm.textContent = 'Voltar ao login';
+      }
+      authForm.reset();
+    });
 
-      if (err) {
-        if (err.code === 'PGRST116') {
-          // Perfil não existe, cria
-          await supabase.from('profiles').insert({ id: user.id, Coins: 0, Tokens: 0 });
-          coinsSpan.textContent = 0;
-          tokensSpan.textContent = 0;
+    // Evento do form
+    authForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMessages();
+
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      if (!validateInputs(email, password)) return;
+
+      if (isLogin) {
+        showMessage('Fazendo login...');
+        const { data, error } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (error) {
+          showError('Erro ao fazer login: ' + error.message);
+          showMessage('', false);
         } else {
-          alert('Erro ao carregar perfil: ' + err.message);
-          return;
+          showMessage(`Login realizado com sucesso! Bem-vindo(a), ${data.user.email}`);
         }
       } else {
-        coinsSpan.textContent = data.Coins;
-        tokensSpan.textContent = data.Tokens;
-      }
+        showMessage('Criando conta...');
+        const { data, error } = await supabaseClient.auth.signUp({
+          email,
+          password,
+        });
 
-      showLoggedIn();
-    }
-
-    function showLoggedIn() {
-      profileDiv.classList.remove('d-none');
-      signupDiv.style.display = 'none';
-      loginDiv.style.display = 'none';
-    }
-
-    function showLoggedOut() {
-      profileDiv.classList.add('d-none');
-      signupDiv.style.display = 'block';
-      loginDiv.style.display = 'block';
-    }
-
-    signupForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('signup-email').value;
-      const password = document.getElementById('signup-password').value;
-
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) {
-        alert('Erro no cadastro: ' + error.message);
-      } else {
-        alert('Cadastro feito! Verifique seu email para confirmação.');
-        signupForm.reset();
+        if (error) {
+          showError('Erro ao cadastrar: ' + error.message);
+          showMessage('', false);
+        } else {
+          showMessage('Cadastro realizado! Por favor, confirme seu email antes de logar.');
+          // Voltar para tela de login após 3 segundos
+          setTimeout(() => {
+            toggleForm.click();
+          }, 3000);
+        }
       }
     });
 
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        alert('Erro no login: ' + error.message);
-      } else {
-        loginForm.reset();
-        await loadProfile();
-      }
+    // Exibir versão Supabase no rodapé
+    window.addEventListener('load', () => {
+      versionBox.textContent = `Supabase JS v${supabase.VERSION}`;
     });
-
-    logoutBtn.addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      showLoggedOut();
-    });
-
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        loadProfile();
-      } else {
-        showLoggedOut();
-      }
-    });
-
-    // Ao carregar a página
-    loadProfile();
   </script>
 </body>
 </html>
