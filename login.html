@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login Supabase com Bootstrap</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body class="bg-light">
+
+  <div class="container py-5" style="max-width: 400px;">
+    <h1 class="mb-4 text-center">Supabase Login</h1>
+
+    <!-- Cadastro -->
+    <div id="signup-div">
+      <h3>Cadastro</h3>
+      <form id="signup-form" class="mb-4">
+        <div class="mb-3">
+          <input type="email" id="signup-email" class="form-control" placeholder="Email" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" id="signup-password" class="form-control" placeholder="Senha" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Cadastrar</button>
+      </form>
+    </div>
+
+    <!-- Login -->
+    <div id="login-div">
+      <h3>Login</h3>
+      <form id="login-form" class="mb-4">
+        <div class="mb-3">
+          <input type="email" id="login-email" class="form-control" placeholder="Email" required />
+        </div>
+        <div class="mb-3">
+          <input type="password" id="login-password" class="form-control" placeholder="Senha" required />
+        </div>
+        <button type="submit" class="btn btn-success w-100">Entrar</button>
+      </form>
+    </div>
+
+    <!-- Perfil -->
+    <div id="profile-div" class="d-none card p-3">
+      <h3>Perfil</h3>
+      <p><strong>Coins:</strong> <span id="coins">0</span></p>
+      <p><strong>Tokens:</strong> <span id="tokens">0</span></p>
+      <button id="logout-btn" class="btn btn-danger w-100">Sair</button>
+    </div>
+  </div>
+
+  <!-- Supabase JS -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/supabase.min.js"></script>
+  <!-- Bootstrap Bundle JS (opcional para componentes bootstrap) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const SUPABASE_URL = 'https://pclrnkgztxtvnxgcjoqk.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBjbHJua2d6dHh0dm54Z2Nqb3FrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc3NzQ0MDYsImV4cCI6MjA2MzM1MDQwNn0.C6V9GEaJwkkWboE0pJY-w1wB_IqYlCSni4NG2LTrolY';
+
+    const supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Elementos DOM
+    const signupDiv = document.getElementById('signup-div');
+    const loginDiv = document.getElementById('login-div');
+    const profileDiv = document.getElementById('profile-div');
+
+    const signupForm = document.getElementById('signup-form');
+    const loginForm = document.getElementById('login-form');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const coinsSpan = document.getElementById('coins');
+    const tokensSpan = document.getElementById('tokens');
+
+    async function loadProfile() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error || !user) {
+        showLoggedOut();
+        return;
+      }
+
+      const { data, error: err } = await supabase
+        .from('profiles')
+        .select('Coins, Tokens')
+        .eq('id', user.id)
+        .single();
+
+      if (err) {
+        if (err.code === 'PGRST116') {
+          // Perfil não existe, cria
+          await supabase.from('profiles').insert({ id: user.id, Coins: 0, Tokens: 0 });
+          coinsSpan.textContent = 0;
+          tokensSpan.textContent = 0;
+        } else {
+          alert('Erro ao carregar perfil: ' + err.message);
+          return;
+        }
+      } else {
+        coinsSpan.textContent = data.Coins;
+        tokensSpan.textContent = data.Tokens;
+      }
+
+      showLoggedIn();
+    }
+
+    function showLoggedIn() {
+      profileDiv.classList.remove('d-none');
+      signupDiv.style.display = 'none';
+      loginDiv.style.display = 'none';
+    }
+
+    function showLoggedOut() {
+      profileDiv.classList.add('d-none');
+      signupDiv.style.display = 'block';
+      loginDiv.style.display = 'block';
+    }
+
+    signupForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('signup-email').value;
+      const password = document.getElementById('signup-password').value;
+
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) {
+        alert('Erro no cadastro: ' + error.message);
+      } else {
+        alert('Cadastro feito! Verifique seu email para confirmação.');
+        signupForm.reset();
+      }
+    });
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        alert('Erro no login: ' + error.message);
+      } else {
+        loginForm.reset();
+        await loadProfile();
+      }
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      showLoggedOut();
+    });
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        loadProfile();
+      } else {
+        showLoggedOut();
+      }
+    });
+
+    // Ao carregar a página
+    loadProfile();
+  </script>
+</body>
+</html>
